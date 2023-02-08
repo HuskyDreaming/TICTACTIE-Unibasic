@@ -1,0 +1,227 @@
+PROGRAM TICTACTOE
+
+    VAR SIZE = 3
+    VAR SIZE_SQUARED = 0
+
+    VAR ITERATION = 0
+    VAR STATE = 0
+    VAR WINNER = 0
+    VAR SYMBOL = "X"
+    VAR GRID = ""
+
+    VAR NUMBER
+    VAR X
+    VAR Y
+
+    LOOP
+    WHILE WINNER = 0 DO
+        ITERATION = ITERATION + 1
+
+        BEGIN SELECT STATE
+            WHEN 0
+                CALL INPUT_SIZE(SIZE)
+
+                SIZE_SQUARED = (SIZE * SIZE)
+
+                CALL POPULATE(GRID, SIZE)
+                CALL DISPLAY(GRID, SIZE)
+
+                STATE = 1
+            WHEN 1
+                CALL INPUT_NUMBER(NUMBER, SIZE_SQUARED, SYMBOL)
+                IF(IS_VALID_NUMBER(NUMBER, SIZE_SQUARED)) THEN
+        
+                    CALL GET_POSITION(NUMBER, X, Y, SIZE)
+                    IF(IS_VALID_POSITION(GRID, X, Y)) THEN
+        
+                        GRID<X,Y> = SYMBOL
+                        WINNER = CHECK_WINNER(GRID, SIZE, SYMBOL, X, Y)
+        
+                        CALL DISPLAY(GRID, SIZE)
+                        CALL DETERMINE(WINNER, ITERATION, SIZE_SQUARED, STATE, SYMBOL)
+                    END
+                END  
+            WHEN 2
+
+        END SELECT
+
+    REPEAT
+END PROGRAM
+
+FUNCTION IS_VALID_NUMBER(IN NUMBER, IN SIZE_SQUARED)
+
+    IF NOT(NUMBER < SIZE_SQUARED AND NUMBER > 0) THEN
+        CRT "Must provide a number between 1 and ":SIZE_SQUARED:"."
+        RETURN 0
+    END ELSE
+        RETURN 1
+    END
+
+END FUNCTION
+
+FUNCTION IS_VALID_POSITION(IN GRID, IN X, IN Y)
+
+    IF NOT (GRID<X,Y> = " ") THEN
+        CRT "Must provide a valid position."
+        RETURN 0
+    END ELSE
+        RETURN 1
+    END
+
+END FUNCTION
+
+FUNCTION CHECK_COLUMN(IN GRID, IN SIZE, IN SYMBOL, IN Y)
+    FOR VAR I = 1 TO SIZE
+        IF NOT (GRID<Y, I> = SYMBOL) THEN EXIT
+        IF (I = SIZE) THEN RETURN 1
+    NEXT I 
+
+    RETURN 0
+END FUNCTION
+
+FUNCTION CHECK_ROW(IN GRID, IN SIZE, IN SYMBOL, IN X)
+    FOR VAR I = 1 TO SIZE
+        IF NOT (GRID<I, X> = SYMBOL) THEN EXIT
+        IF(I = SIZE) THEN RETURN 1
+    NEXT I
+
+    RETURN 0
+END FUNCTION
+
+FUNCTION CHECK_DIAGONAL(IN GRID, IN SIZE, IN SYMBOL, IN X, IN Y)
+    IF (X = Y) THEN
+        FOR VAR I = 1 TO SIZE
+            IF NOT (GRID<I, I> = SYMBOL) THEN EXIT
+            IF(I = SIZE) THEN RETURN 1
+        NEXT I
+    END
+
+    RETURN 0
+END FUNCTION
+
+FUNCTION CHECK_WINNER(IN GRID, IN SIZE, IN SYMBOL, IN X, IN Y)
+
+    VAR VALID_ROW = CHECK_ROW(GRID, SIZE, SYMBOL, Y)
+    VAR VALID_COLUMN = CHECK_COLUMN(GRID, SIZE, SYMBOL, X)
+    VAR VALID_DIAGONAL = CHECK_DIAGONAL(GRID, SIZE, SYMBOL, X, Y)
+
+    RETURN VALID_ROW OR VALID_COLUMN OR VALID_DIAGONAL
+
+END FUNCTION
+
+SUBROUTINE POPULATE(IN OUT GRID, IN SIZE)
+
+    FOR VAR I = 1 TO SIZE
+        FOR VAR J = 1 TO SIZE
+            GRID<I,J> = " "
+        NEXT J
+    NEXT I
+
+END SUBROUTINE
+
+SUBROUTINE SWITCH(IN OUT SYMBOL)
+
+    IF(SYMBOL = "X") THEN
+        SYMBOL = "O"
+    END ELSE IF(SYMBOL = "O") THEN
+        SYMBOL = "X"
+    END
+
+END SUBROUTINE
+
+SUBROUTINE INPUT_NUMBER(OUT NUMBER, IN SIZE_SQUARED, IN SYMBOL)
+
+    CRT SYMBOL:"'s turn"
+    CRT "Input a position (1 - ":SIZE_SQUARED:") "
+    CRT "> ":
+    INPUT NUMBER
+
+END SUBROUTINE
+
+SUBROUTINE INPUT_SIZE(OUT SIZE)
+
+    FOR VAR T = 1 TO 100
+        CRT ""
+    NEXT T
+
+    CRT "What do you want the board size to be? "
+    CRT "(Press enter for default 3x3)"
+    CRT "> ":
+
+    INPUT SIZE 
+
+    IF (SIZE = "") THEN
+        SIZE = 3
+    END
+
+END SUBROUTINE
+
+SUBROUTINE DETERMINE(IN WINNER, IN ITERATION, IN SIZE_SQUARED, IN STATE, IN OUT SYMBOL)
+
+    IF NOT (WINNER) THEN
+        CALL SWITCH(SYMBOL)
+    END ELSE IF (ITERATION < SIZE_SQUARED) THEN
+        CRT SYMBOL:" has won the match!"
+    END ELSE
+        CRT "Match ended in a draw!"
+    END
+
+    STATE = 2
+
+END SUBROUTINE
+
+SUBROUTINE GET_POSITION(IN POSITION, OUT X, OUT Y, IN SIZE)
+
+    X = INT((POSITION - 1) / SIZE) + 1
+    Y = INT(MOD((POSITION - 1) , SIZE)) + 1
+
+END SUBROUTINE
+
+SUBROUTINE CREATE_DISPLAY(IN SIZE, IN OUT HEADER, IN OUT MIDDLE, IN OUT FOOTER)
+
+    FOR VAR I = 1 TO SIZE
+        IF(I = 1) THEN
+            HEADER := "┏━━━┳"
+            MIDDLE := "┣━━━╋"
+            FOOTER := "┗━━━┻"
+        END ELSE IF(I = SIZE) THEN
+            HEADER := "━━━┓"
+            MIDDLE := "━━━┫"
+            FOOTER := "━━━┛"
+        END ELSE
+            HEADER := "━━━┳"
+            MIDDLE := "━━━╋"
+            FOOTER := "━━━┻"
+        END
+    NEXT I
+    
+END SUBROUTINE
+
+SUBROUTINE DISPLAY(IN GRID, IN SIZE)
+
+    VAR HEADER = ""     
+    VAR MIDDLE = ""
+    VAR FOOTER = ""
+    VAR FORMAT = "L#2"
+    VAR SPACER = "┃" FORMAT
+
+    CALL CREATE_DISPLAY(SIZE, HEADER, MIDDLE, FOOTER)
+
+    FOR VAR T = 1 TO 100
+        CRT ""
+    NEXT T
+
+    FOR VAR I = 1 TO DCOUNT(GRID, @AM)
+        IF (I = 1) THEN CRT HEADER
+
+        IF NOT (I = 1) THEN CRT MIDDLE 
+        CRT SPACER:
+        FOR VAR J = 1 TO DCOUNT(GRID<I>, @VM)
+            CRT GRID<I,J> FORMAT: SPACER:
+        NEXT J
+        CRT ""
+
+        IF (I = SIZE) THEN CRT FOOTER
+    NEXT I
+
+END SUBROUTINE
